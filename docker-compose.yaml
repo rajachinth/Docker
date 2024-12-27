@@ -1,0 +1,72 @@
+# version of the docker compose
+# version: '3.8'
+services:
+  servicecontainerone:
+    # use image; if you already have in local or hub
+    # image: 'servicecontainerone'
+    # volumes:
+    #   -test_volume:/temp
+    # use any of below approches for declaring env
+    # environment:
+    #   - TEST_V1=TEST_V1
+    #   - TEST_V2=TEST_V2
+    # env_file:
+    #   - ./env_variables/.env
+    # when we use docker compose; all the containers/services within this yaml file will default have same network
+    # we can exclude below step to define networks; else; we still go ahead & declare the network
+    # use any of below two ways to build
+    # build: ./Service_Container_One
+    container_name: servicecontainerone
+    build:
+      # context scope should be the root scope; where the Dockerfile is accessing the resources on the host.
+      # if the Dockerfile is accessing something like COPY ../Service_Container_Two; then the context scope is /Docker folder
+      context: ./Service_Container_One
+      dockerfile: Dockerfile
+      args:
+        - PORT_VALUE=5000
+      # we can skip the "network"; as all the containers in the docker compose defaulted to same network
+      # network: local_network_custom
+    ports:
+      - '5000:5000'
+    volumes:
+      # named volumes
+      - test_volume:/temp/customer_volume_data
+      # anonymus volumes
+      - /temp/anonymus_volume_data
+      # bind mount data
+      - ./Service_Container_One:/temp/custom_bind_mount_data
+    depends_on:
+      - servicecontainertwo
+  servicecontainertwo:
+    container_name: servicecontainertwo
+    build: 
+      context: ./Service_Container_Two
+      dockerfile: Dockerfile
+      args:
+        - PORT_VALUE=4000
+      # network: local_network_custom
+    ports:
+      - '4000:4000'
+    volumes:
+      # named volumes
+      - test_volume:/temp/customer_volume_data
+      # anonymus volumes
+      - /temp/anonymus_volume_data
+      # bind mount data
+      - ./Service_Container_One:/temp/custom_bind_mount_data
+  utilitycontainer:
+    build:
+      context: ./Utility_Container
+      dockerfile: Dockerfile
+    volumes:
+      - ./Utility_Container:/app
+    # entrypoint can be set on docker-compose or on Dockerfile
+    # entrypoint: ["npm"]
+    stdin_open: true
+    tty: true
+# only named volumes need to be added like below
+volumes:
+  test_volume:
+# networks:
+#   local_network_custom:
+#     driver: bridge
